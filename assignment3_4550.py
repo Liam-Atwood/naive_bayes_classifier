@@ -7,12 +7,11 @@ Implements the Naïve Bayes classification algorithm for datasets with categoric
 The program:
 1) Loads a CSV file with categorical data.
 2) Splits the dataset into training (80%) and test (20%) sets.
-3) Classifies test instances using the NB algorithm.
-4) Calculates and prints the accuracy.
+3) Classifies test group using the NB algorithm.
+4) Calculates the accuracy.
 """
 
 import pandas as pd
-from collections import defaultdict
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
@@ -23,26 +22,29 @@ class NaiveBayesClassifier:
     """Naïve Bayes classifier for categorical data."""
 
     def __init__(self):
-        self.priors = defaultdict(float)
-        self.likelihoods = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
-        self.classes = []
+        self.priors = {}  # Class probabilities (P(C))
+        self.likelihoods = {}  # Feature likelihoods (P(F|C))
+        self.classes = []  # Unique class labels
 
     def train(self, x, y):
         """Train the Naïve Bayes model."""
         self.classes = y.unique()
         total_instances = len(y)
 
-        # Calculate priors P(C)
-        for c in self.classes:
-            self.priors[c] = len(y[y == c]) / total_instances
+        # Calculate P(C)
+        self.priors = {c: len(y[y == c]) / total_instances for c in self.classes}
 
-        # Calculate likelihoods P(F_i | C)
-        for feature in x.columns:
-            for c in self.classes:
-                feature_counts = x[y == c][feature].value_counts()
-                total_class_instances = len(x[y == c])
-                for value, count in feature_counts.items():
-                    self.likelihoods[feature][value][c] = count / total_class_instances
+        # Calculate likelihoods P(F|C)
+        self.likelihoods = {
+            feature: {
+                value: {
+                    c: (x[y == c][feature] == value).sum() / len(x[y == c])
+                    for c in self.classes
+                }
+                for value in x[feature].unique()
+            }
+            for feature in x.columns
+        }
 
     def predict(self, x):
         """Predict the class for each instance in X."""
@@ -50,18 +52,19 @@ class NaiveBayesClassifier:
         for _, instance in x.iterrows():
             class_probabilities = {}
             for c in self.classes:
-                # Start with the prior
-                class_probabilities[c] = self.priors[c]
+                # Previous probability
+                prob = self.priors[c]
                 # Multiply by likelihoods
                 for feature, value in instance.items():
-                    class_probabilities[c] *= self.likelihoods[feature][value].get(c, 1e-6)
+                    prob *= self.likelihoods.get(feature, {}).get(value, {}).get(c, 1e-6)
+                class_probabilities[c] = prob
 
-            # Choose the class with the highest probability
+            # Predict the highest probability
             predictions.append(max(class_probabilities, key=class_probabilities.get))
         return predictions
 
 
-# ------------------------------------ Main Program ----------------------------------------
+# ------------------------------------ Main Program ---------------------------------------------------
 
 def main():
     """Main program implementation."""
@@ -77,12 +80,12 @@ def main():
     # Split into training and test sets
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
-    # Train the classifier
+    # Train the model
     nb_classifier = NaiveBayesClassifier()
     nb_classifier.train(x_train, y_train)
     print("Training complete.")
 
-    # Predict on test set
+    # Predict using test set
     predictions = nb_classifier.predict(x_test)
 
     # Calculate accuracy

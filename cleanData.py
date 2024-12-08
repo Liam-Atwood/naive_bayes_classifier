@@ -36,7 +36,7 @@ def preprocess_dataset(input_file, output_file):
     )
 
     # Drop original continuous columns (optional)
-    data.drop(columns=['age', 'trtbps', 'chol', 'thalachh'], inplace=True)
+    data.drop(columns=['age', 'trtbps', 'chol', 'thalachh', 'oldpeak'], inplace=True)
 
     # Reorder columns for clarity
     categorical_columns = ['Age_Group', 'BP_Group', 'Chol_Group', 'Heart_Rate_Group']
