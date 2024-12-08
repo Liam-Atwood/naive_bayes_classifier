@@ -27,7 +27,7 @@ class NaiveBayesClassifier:
         self.likelihoods = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         self.classes = []
 
-    def train(self, X, y):
+    def train(self, x, y):
         """Train the Naïve Bayes model."""
         self.classes = y.unique()
         total_instances = len(y)
@@ -37,17 +37,17 @@ class NaiveBayesClassifier:
             self.priors[c] = len(y[y == c]) / total_instances
 
         # Calculate likelihoods P(F_i | C)
-        for feature in X.columns:
+        for feature in x.columns:
             for c in self.classes:
-                feature_counts = X[y == c][feature].value_counts()
-                total_class_instances = len(X[y == c])
+                feature_counts = x[y == c][feature].value_counts()
+                total_class_instances = len(x[y == c])
                 for value, count in feature_counts.items():
                     self.likelihoods[feature][value][c] = count / total_class_instances
 
-    def predict(self, X):
+    def predict(self, x):
         """Predict the class for each instance in X."""
         predictions = []
-        for _, instance in X.iterrows():
+        for _, instance in x.iterrows():
             class_probabilities = {}
             for c in self.classes:
                 # Start with the prior
@@ -67,24 +67,23 @@ def main():
     """Main program implementation."""
 
     # Load data
-    file_path = input("Enter the path to the CSV file: ")
+    file_path = "heartCategorical.csv"
     data = pd.read_csv(file_path)
-    print("Data loaded successfully.")
 
-    # Split into features and target
-    X = data.iloc[:, :-1]
+    # Split into categorical features and class variable
+    x = data.iloc[:, :-1]
     y = data.iloc[:, -1]
 
     # Split into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
     # Train the classifier
     nb_classifier = NaiveBayesClassifier()
-    nb_classifier.train(X_train, y_train)
+    nb_classifier.train(x_train, y_train)
     print("Training complete.")
 
     # Predict on test set
-    predictions = nb_classifier.predict(X_test)
+    predictions = nb_classifier.predict(x_test)
 
     # Calculate accuracy
     accuracy = accuracy_score(y_test, predictions)
